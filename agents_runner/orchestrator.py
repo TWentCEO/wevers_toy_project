@@ -99,6 +99,39 @@ async def run_techwriter_subagent(task_prompt: str):
         print(content)
         return content
 
+async def run_performance_architect_subagent(task_prompt: str):
+    """
+    Subagent: @PerformanceArchitect
+    Responsible for analyzing high-traffic performance standards, SLO/SLI metrics,
+    I/O bottlenecks (IOPS, Connection Pool, Cache latency), domain benchmarks,
+    and generating Mermaid visualization charts.
+    """
+    print("\n[🚀 Spawning Subagent: @PerformanceArchitect] ...")
+    perf_config = LocalAgentConfig(
+        model="gemini-3.5-flash-lite",
+        system_instructions=(
+            "You are @PerformanceArchitect, a Principal Performance Architect and SRE Reliability Specialist.\n"
+            "Your mission is to analyze and visualize large-scale traffic performance based on:\n"
+            "1. International Standards (ISO/IEC 25010 Performance Efficiency, Little's Law, Universal Scalability Law).\n"
+            "2. SLO / SLI / SLA Hierarchies (Google SRE 4 Golden Signals: Latency p95/p99, Traffic TPS, Error Rate, Saturation).\n"
+            "3. I/O & System Bottleneck Metrics (Storage IOPS, Network Throughput, HikariCP Connection Pool wait time, Redis p99 command latency, Kafka lag).\n"
+            "4. Domain-specific Benchmarks (Ticketing / Flash-sale: 1,000~10,000 TPS, zero overselling, max queue wait time).\n"
+            "5. Visualizations: Always provide clear Markdown comparison tables and Mermaid diagrams for architecture bottlenecks and metric flows."
+        ),
+        capabilities=types.CapabilitiesConfig(
+            agent_behavior=types.AgentBehavior.AUTONOMOUS,
+            enable_subagents=False
+        ),
+        api_key=GEMINI_API_KEY
+    )
+
+    async with Agent(perf_config) as agent:
+        response = await agent.chat(task_prompt)
+        content = await response.text()
+        print("\n[@PerformanceArchitect Output]:")
+        print(content)
+        return content
+
 async def main():
     if not GEMINI_API_KEY:
         print("❌ Error: GEMINI_API_KEY environment variable is not set.")
@@ -106,21 +139,30 @@ async def main():
         sys.exit(1)
 
     print("=================================================================")
-    print("🤖 Main Orchestrator: Dispatching tasks to independent Subagents")
+    print("🤖 Main Orchestrator: Spawning @PerformanceArchitect Subagent")
     print("=================================================================")
 
-    # Task for @TechWriter: Draft TIL for Weverse architecture
-    techwriter_task = (
-        "위버스컴퍼니 수준의 대규모 선착순 예매 시스템에 "
-        "Modular Monolith, EDA(Kafka), CQRS(Redis)를 도입하는 이유와 설계 배경에 대해 "
-        "깔끔한 Markdown 형태의 TIL(Today I Learned) 초안을 작성하라."
+    # Task for @PerformanceArchitect: Produce Performance & SLO Benchmark Report
+    perf_task = (
+        "위버스컴퍼니 수준의 대규모 선착순 예매 시스템(초당 1,000~10,000건 스파이크 트래픽)을 위한 "
+        "1) 국제 표준(ISO/IEC 25010) 기반 성능 평가 체계, "
+        "2) 4대 골든 시그널 기반 SLO/SLI 목표치, "
+        "3) 핵심 I/O 및 병목 지표(Redis, DB HikariCP, Kafka Lag, Network/Disk), "
+        "4) 도메인(선착순 티켓팅) 통용 기준 및 Mermaid 시각화 다이어그램을 포함한 "
+        "종합 성능 아키텍처 보고서를 마크다운으로 작성하라."
     )
-    til_content = await run_techwriter_subagent(techwriter_task)
+    perf_report = await run_performance_architect_subagent(perf_task)
 
     os.makedirs("docs", exist_ok=True)
-    with open("docs/TIL_Weverse_Architecture.md", "w", encoding="utf-8") as f:
-        f.write(til_content)
-    print("\n✅ Saved TIL to docs/TIL_Weverse_Architecture.md")
+    with open("docs/04_PERFORMANCE_METRICS_AND_SLO.md", "w", encoding="utf-8") as f:
+        f.write(perf_report)
+    print("\n✅ Saved Performance Architecture Report to docs/04_PERFORMANCE_METRICS_AND_SLO.md")
+
+    print("\n=================================================================")
+    print("🎉 @PerformanceArchitect Successfully Generated Performance & SLO Benchmark Report!")
+    print("=================================================================")
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+
