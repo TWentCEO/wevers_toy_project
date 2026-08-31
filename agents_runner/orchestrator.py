@@ -4,14 +4,27 @@ Spawns actual independent Subagents (@Engineer, @SRE, @TechWriter) as separate a
 """
 import os
 import sys
+import glob
 import asyncio
+from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv(".env.local")
-load_dotenv(".env")
+# Auto-detect and include .venv site-packages if running outside virtualenv
+project_root = Path(__file__).resolve().parent.parent
+venv_site_packages = glob.glob(str(project_root / ".venv" / "lib" / "python*" / "site-packages"))
+if venv_site_packages and venv_site_packages[0] not in sys.path:
+    sys.path.insert(0, venv_site_packages[0])
+
+load_dotenv(project_root / ".env.local")
+load_dotenv(project_root / ".env")
 load_dotenv()
 
-from google.antigravity import Agent, LocalAgentConfig, types
+try:
+    from google.antigravity import Agent, LocalAgentConfig, types
+except ModuleNotFoundError as e:
+    print("❌ [Import Error] google-antigravity SDK is not installed in the current environment.")
+    print("Please install dependencies using: .venv/bin/pip install google-antigravity python-dotenv")
+    sys.exit(1)
 
 # Verify API key
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
