@@ -116,10 +116,10 @@ graph TD
     end
 
     subgraph "In-Memory & Messaging Layer"
-        RedisZSet[("Redis 7: ZSET<br>queue:product:{id}:waiting")]
-        RedisToken[("Redis 7: String (TTL 5m)<br>queue:token:{token}")]
-        RedisStock[("Redis 7: Atomic Counter<br>product:stock:{id}")]
-        RedisCache[("Redis 7: JSON Cache<br>product:detail:{id}")]
+        RedisZSet[("Redis 7: ZSET<br>queue:product:id:waiting")]
+        RedisToken[("Redis 7: String (TTL 5m)<br>queue:token:token")]
+        RedisStock[("Redis 7: Atomic Counter<br>product:stock:id")]
+        RedisCache[("Redis 7: JSON Cache<br>product:detail:id")]
         KafkaBroker[("Apache Kafka 7.5<br>Topic: order-requests")]
     end
 
@@ -132,10 +132,10 @@ graph TD
         Grafana["Grafana (3000)<br>실시간 대시보드 시각화"]
     end
 
-    Client -->|1. POST /queue/enter| Controller
-    Client -->|2. GET /queue/status| Controller
-    Client -->|3. GET /products/{id}| Controller
-    Client -->|4. POST /orders (202)| Controller
+    Client -->|"1. POST /queue/enter"| Controller
+    Client -->|"2. GET /queue/status"| Controller
+    Client -->|"3. GET /products/:id"| Controller
+    Client -->|"4. POST /orders (202)"| Controller
 
     Controller --> QService
     Controller --> PService
@@ -147,7 +147,7 @@ graph TD
 
     PService --> RedisCache
     PService --> RedisStock
-    PService -.->|Cache Miss Fallback| MySQL
+    PService -.->|"Cache Miss Fallback"| MySQL
 
     OService --> RedisToken
     OService --> RedisStock
@@ -156,7 +156,7 @@ graph TD
     KafkaBroker --> Consumer
     Consumer --> MySQL
 
-    Controller -.->|/actuator/prometheus| Prometheus
+    Controller -.->|"/actuator/prometheus"| Prometheus
     Prometheus --> Grafana
 ```
 
@@ -179,26 +179,26 @@ sequenceDiagram
 
     %% 1. 대기열 진입
     User->>Queue: POST /api/v1/queue/enter (productId, userId)
-    Queue->>Redis: ZADD queue:product:1:waiting {token} {timestamp}
-    Queue->>Redis: ZRANK queue:product:1:waiting {token}
+    Queue->>Redis: ZADD queue:product:1:waiting token timestamp
+    Queue->>Redis: ZRANK queue:product:1:waiting token
     Redis-->>Queue: rank = 500
     Queue-->>User: 200 OK (token, waitingPosition: 501, ahead: 500)
 
     %% 2. 순번 폴링 & 스케줄러 승급
     loop 1초마다 폴링
-        User->>Queue: GET /api/v1/queue/status?token={token}
-        Queue->>Redis: HASKEY queue:token:{token} / ZRANK
+        User->>Queue: GET /api/v1/queue/status?token=token
+        Queue->>Redis: HASKEY queue:token:token / ZRANK
         Redis-->>Queue: WAITING (ahead: 250)
         Queue-->>User: 200 OK (status: WAITING, ahead: 250)
     end
 
     Note over Sched,Redis: ⏰ 1초 주기 백그라운드 스케줄러 동작!
     Sched->>Redis: ZRANGE queue:product:1:waiting 0 99 (상위 100명 추출)
-    Sched->>Redis: SET queue:token:{token} "ACTIVE" EX 300 (TTL 5분)
-    Sched->>Redis: ZREM queue:product:1:waiting {tokens...}
+    Sched->>Redis: SET queue:token:token "ACTIVE" EX 300 (TTL 5분)
+    Sched->>Redis: ZREM queue:product:1:waiting tokens...
 
-    User->>Queue: GET /api/v1/queue/status?token={token}
-    Queue->>Redis: HASKEY queue:token:{token} -> TRUE!
+    User->>Queue: GET /api/v1/queue/status?token=token
+    Queue->>Redis: HASKEY queue:token:token -> TRUE!
     Queue-->>User: 200 OK (status: ACTIVE) 🎉 "입장하세요!"
 
     %% 3. 상품 상세 조회 (CQRS Cache-Aside)
@@ -209,11 +209,11 @@ sequenceDiagram
 
     %% 4. 주문 요청 (원자적 선점 & 202 응답)
     User->>Order: POST /api/v1/orders (Header: Queue-Token)
-    Order->>Redis: HASKEY queue:token:{token} (토큰 유효성 검증)
+    Order->>Redis: HASKEY queue:token:token (토큰 유효성 검증)
     Order->>Redis: DECRBY product:stock:1 1 (0.001초 원자적 재고 선점)
     Redis-->>Order: remainingStock = 99 (성공!)
     Order->>Kafka: SEND order-requests (PartitionKey: productId, Payload)
-    Order->>Redis: DEL queue:token:{token} (1회용 토큰 소각)
+    Order->>Redis: DEL queue:token:token (1회용 토큰 소각)
     Order-->>User: 202 ACCEPTED (orderNumber: "ORD-123", status: PENDING)
 
     %% 5. 백그라운드 DB 체결
@@ -245,14 +245,14 @@ flowchart TD
     ShowProduct --> OrderBtn["선착순 구매하기 버튼 클릭<br>POST /api/v1/orders"]
     OrderBtn --> TokenValid{활성 토큰<br>유효한가?}
     TokenValid -- "No (만료/위조)" --> TokenError["🚨 유효하지 않은 토큰 에러"] --> EndFail
-    TokenValid -- "Yes" --> DecrStock["Redis 원자적 재고 차감<br>(DECRBY product:stock:{id} 1)"]
+    TokenValid -- "Yes" --> DecrStock["Redis 원자적 재고 차감<br>(DECRBY product:stock:id 1)"]
 
     DecrStock --> CheckStock{차감 후 잔여재고}
-    CheckStock -- "잔여재고 < 0 (품절)" --> Rollback["재고 롤백 (+1)<br>INCR product:stock:{id}"]
+    CheckStock -- "잔여재고 < 0 (품절)" --> Rollback["재고 롤백 (+1)<br>INCR product:stock:id"]
     Rollback --> SoldOutAlert["💥 400 품절 안내 (완판)"] --> EndFail
 
     CheckStock -- "잔여재고 >= 0 (성공)" --> SendKafka["Kafka 주문 이벤트 발행<br>(Topic: order-requests)"]
-    SendKafka --> BurnToken["1회용 토큰 즉시 소각<br>(DEL queue:token:{token})"]
+    SendKafka --> BurnToken["1회용 토큰 즉시 소각<br>(DEL queue:token:token)"]
     BurnToken --> Resp202["🎉 202 ACCEPTED 즉시 응답<br>(주문 접수 완료)"]
     
     Resp202 --> AsyncFulfill["백그라운드 Kafka Consumer<br>MySQL DB 영속화 (PAID 체결)"]
