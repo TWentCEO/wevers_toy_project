@@ -9,15 +9,26 @@ echo "📈 Prometheus:        http://localhost:9090"
 echo "🌐 API Server:         http://localhost:8080"
 echo "=================================================================="
 
-# k6 설치 여부 확인
-if ! command -v k6 &> /dev/null; then
-    echo "⚠️ k6가 설치되어 있지 않습니다. Mac의 경우 'brew install k6'로 설치해주세요."
-    echo "💡 Docker를 통해 실행합니다..."
-    
-    docker run --rm -i --network="host" grafana/k6 run - < scripts/k6/01_queue_spike_test.js
-else
-    echo "▶️ 1. 대기열 스파이크 부하 테스트 실행 (scripts/k6/01_queue_spike_test.js)..."
+# 1. 서버 실행 여부 확인 (Health Check)
+echo "🔍 1. 스프링 부트 서버(http://localhost:8080) 연결 상태 확인 중..."
+if ! curl -s --max-time 3 http://localhost:8080/actuator/health > /dev/null; then
+    echo "⚠️ [주의] 스프링 부트 애플리케이션(8080)이 아직 실행되지 않았습니다!"
+    echo "💡 새 터미널 창에서 './gradlew bootRun'을 먼저 실행해주세요."
+    exit 1
+fi
+echo "✅ 스프링 부트 서버가 정상 가동 중입니다!"
+
+# 2. k6 실행
+if command -v k6 &> /dev/null; then
+    echo "▶️ 2. k6 로컬 실행 (scripts/k6/01_queue_spike_test.js)..."
     k6 run scripts/k6/01_queue_spike_test.js
+else
+    echo "▶️ 2. k6 Docker 컨테이너를 통해 부하 테스트를 실행합니다..."
+    docker run --rm -i --add-host=host.docker.internal:host-gateway \
+        -e TARGET_URL="http://host.docker.internal:8080" \
+        grafana/k6 run - < scripts/k6/01_queue_spike_test.js
 fi
 
-echo "✅ k6 부하 테스트 완료!"
+echo "=================================================================="
+echo "🎉 k6 부하 테스트 완료! Grafana(http://localhost:3000)에서 실시간 지표를 확인하세요."
+echo "=================================================================="
