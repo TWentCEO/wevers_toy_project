@@ -30,6 +30,10 @@ public class QueueServiceImpl implements QueueService {
      */
     @Override
     public QueueResponseDto enterQueue(QueueEnterRequestDto requestDto) {
+        if (requestDto == null || requestDto.getProductId() == null || requestDto.getUserId() == null) {
+            throw new IllegalArgumentException("ProductId and UserId must not be null.");
+        }
+
         String token = UUID.randomUUID().toString();
         String waitingQueueKey = WAITING_QUEUE_KEY_PREFIX + requestDto.getProductId() + ":waiting";
         long score = System.currentTimeMillis();
