@@ -151,31 +151,59 @@ async def main():
         print("Please export GEMINI_API_KEY='your_api_key' or set it in .env file.")
         sys.exit(1)
 
-    print("=================================================================")
-    print("🤖 Main Orchestrator: Spawning @PerformanceArchitect Subagent")
-    print("=================================================================")
+    print("\n" + "="*70)
+    print("🏢 [Weverse Engineering Team] Multi-Agent Live Standup Meeting")
+    print("="*70)
 
-    # Task for @PerformanceArchitect: Produce Performance & SLO Benchmark Report
-    perf_task = (
-        "위버스컴퍼니 수준의 대규모 선착순 예매 시스템(초당 1,000~10,000건 스파이크 트래픽)을 위한 "
-        "1) 국제 표준(ISO/IEC 25010) 기반 성능 평가 체계, "
-        "2) 4대 골든 시그널 기반 SLO/SLI 목표치, "
-        "3) 핵심 I/O 및 병목 지표(Redis, DB HikariCP, Kafka Lag, Network/Disk), "
-        "4) 도메인(선착순 티켓팅) 통용 기준 및 Mermaid 시각화 다이어그램을 포함한 "
-        "종합 성능 아키텍처 보고서를 마크다운으로 작성하라."
+    # 1. @Engineer Subagent
+    print("\n----------------------------------------------------------------------")
+    print("👨‍💻 [1/4] @Engineer (Spring Boot / Java 17 Backend Specialist)")
+    print("----------------------------------------------------------------------")
+    engineer_task = (
+        "선착순 대기열(Queue) 모듈을 Redis Sorted Set(ZSET)으로 구현할 때, "
+        "대기열 진입(ZADD)과 순번 확인(ZRANK), 활성화 승급 로직의 핵심 자바 구현 전략을 2줄로 명쾌하게 보고하라."
     )
-    perf_report = await run_performance_architect_subagent(perf_task)
+    engineer_output = await run_engineer_subagent(engineer_task)
 
-    os.makedirs("docs", exist_ok=True)
-    with open("docs/04_PERFORMANCE_METRICS_AND_SLO.md", "w", encoding="utf-8") as f:
-        f.write(perf_report)
-    print("\n✅ Saved Performance Architecture Report to docs/04_PERFORMANCE_METRICS_AND_SLO.md")
+    # 2. @SRE Subagent
+    print("\n----------------------------------------------------------------------")
+    print("🛠️ [2/4] @SRE (Infrastructure & Site Reliability Specialist)")
+    print("----------------------------------------------------------------------")
+    sre_task = (
+        "대기열에 10만 명의 토큰이 쌓일 때, Redis 메모리 사용량 계산과 "
+        "인프라 다운을 방지하기 위한 maxmemory-policy 및 Docker 튜닝 기준을 2줄로 보고하라."
+    )
+    sre_output = await run_sre_subagent(sre_task)
 
-    print("\n=================================================================")
-    print("🎉 @PerformanceArchitect Successfully Generated Performance & SLO Benchmark Report!")
-    print("=================================================================")
+    # 3. @PerformanceArchitect Subagent
+    print("\n----------------------------------------------------------------------")
+    print("📊 [3/4] @PerformanceArchitect (Performance & SLO Specialist)")
+    print("----------------------------------------------------------------------")
+    perf_task = (
+        "대기열 진입(POST /queue/enter)과 순번 폴링(GET /queue/status) API의 "
+        "목표 SLO(p95 < 50ms)와 네트워크/커넥션 풀 병목 방어 기준을 2줄로 보고하라."
+    )
+    perf_output = await run_performance_architect_subagent(perf_task)
+
+    # 4. @TechWriter Subagent
+    print("\n----------------------------------------------------------------------")
+    print("📝 [4/4] @TechWriter (Technical Documentation Specialist)")
+    print("----------------------------------------------------------------------")
+    writer_task = (
+        f"[@Engineer 보고]:\n{engineer_output}\n\n"
+        f"[@SRE 보고]:\n{sre_output}\n\n"
+        f"[@PerformanceArchitect 보고]:\n{perf_output}\n\n"
+        "위 3명의 전문 에이전트 보고를 종합하여, '🚀 [스탠드업 브리프] 선착순 대기열 구현 킥오프 합의안'을 "
+        "깔끔한 3줄 마크다운 리포트로 작성하라."
+    )
+    writer_output = await run_techwriter_subagent(writer_task)
+
+    print("\n" + "="*70)
+    print("🎉 All 4 Subagents (@Engineer, @SRE, @PerformanceArchitect, @TechWriter) Executed Live!")
+    print("="*70 + "\n")
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
