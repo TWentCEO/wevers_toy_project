@@ -1,4 +1,4 @@
-# 📚 Weverse 선착순 예매 시스템: CS 지식, 아키텍처, 성능 벤치마크 및 종합 백서
+# 📚 Weverse 선착순 한정판 구매 시스템: CS 지식, 아키텍처, 성능 벤치마크 및 종합 백서
 
 > **문서 버전:** `v1.0.0 (Master Edition)`  
 > **프로젝트 저장소:** [https://github.com/TWentCEO/wevers_toy_project](https://github.com/TWentCEO/wevers_toy_project)  
@@ -18,11 +18,11 @@
 
 # Part 1. 프로젝트 정복을 위한 필수 CS 핵심 지식 총정리
 
-대규모 트래픽(초당 10,000건 이상)을 처리하는 선착순 예매 시스템을 제대로 이해하고 설계하기 위해 반드시 알아야 하는 6대 CS 핵심 영역입니다.
+대규모 트래픽(초당 10,000건 이상)을 처리하는 한정판 선착순 구매(Flash Sale) 시스템을 제대로 이해하고 설계하기 위해 반드시 알아야 하는 6대 CS 핵심 영역입니다.
 
 ```mermaid
 graph TD
-    subgraph "Essential CS Knowledge for High-Traffic Ticketing"
+    subgraph "Essential CS Knowledge for High-Traffic Flash Sale"
         CS1["1. 동시성 & Race Condition<br>- Critical Section, Atomicity"]
         CS2["2. DB 트랜잭션 & 락 메커니즘<br>- ACID, Pessimistic vs Optimistic"]
         CS3["3. In-Memory & Redis 자료구조<br>- SkipList ZSET, O(log N) Time Complexity"]
@@ -35,7 +35,7 @@ graph TD
 ---
 
 ### 1.1. 동시성(Concurrency)과 경쟁 상태(Race Condition)
-- **경쟁 상태 (Race Condition):** 여러 프로세스/스레드가 공유 자원(예: 재고 수량 100개)에 동시에 접근하여 읽고 쓰는 과정에서 실행 순서에 따라 데이터의 정합성이 깨지는 현상.
+- **경쟁 상태 (Race Condition):** 여러 프로세스/스레드가 공유 자원(예: 한정 재고 수량 100개)에 동시에 접근하여 읽고 쓰는 과정에서 실행 순서에 따라 데이터의 정합성이 깨지는 현상.
 - **임계 영역 (Critical Section):** 공유 자원에 접근하는 코드 블록. 오직 하나의 주체만 접근해야 함.
 - **원자성 (Atomicity):** "전부 실행되거나 전부 실행되지 않는(All or Nothing)" 불가분(Indivisible)의 성질.
 - **본 프로젝트 적용:** 
@@ -86,7 +86,7 @@ graph TD
 - **Cache-Aside (Lazy Loading) 패턴:**
   - 읽기 요청 시 Redis 캐시를 먼저 조회(Cache Hit) $\rightarrow$ 없으면 DB 조회 후 Redis에 적재(Cache Warming) $\rightarrow$ 반환.
 - **Cache Stampede (캐시 스탬피드) 방어:**
-  - 티켓팅 오픈 정각에 캐시가 비어있으면 수만 명이 동시에 DB로 돌진하므로, 이벤트 시작 10분 전 관리자가 캐시를 미리 적재(Pre-warming)하는 정책 수립.
+  - 한정판 오픈 정각에 캐시가 비어있으면 수만 명이 동시에 DB로 돌진하므로, 이벤트 시작 10분 전 관리자가 캐시를 미리 적재(Pre-warming)하는 정책 수립.
 
 ---
 
@@ -162,7 +162,7 @@ graph TD
 
 ---
 
-### 2.2. E2E 선착순 예매 시퀀스 다이어그램
+### 2.2. E2E 선착순 한정판 주문 시퀀스 다이어그램
 
 ```mermaid
 sequenceDiagram
@@ -228,18 +228,18 @@ sequenceDiagram
 
 # Part 3. 엔드투엔드(E2E) 비즈니스 플로우차트
 
-### 3.1. 클라이언트 관점 전체 예매 결정 플로우
+### 3.1. 클라이언트 관점 전체 주문 결정 플로우
 
 ```mermaid
 flowchart TD
-    Start([사용자 예매 시작]) --> EnterQ["대기열 진입 요청<br>POST /api/v1/queue/enter"]
+    Start([사용자 주문 시작]) --> EnterQ["대기열 진입 요청<br>POST /api/v1/queue/enter"]
     EnterQ --> IssueToken["UUID 토큰 발급 &<br>Redis ZSET 등록 (ZADD)"]
     IssueToken --> PollStatus["1초 주기 상태 폴링<br>GET /api/v1/queue/status"]
 
     PollStatus --> CheckStatus{토큰 상태 확인}
     CheckStatus -- "WAITING (대기 중)" --> WaitAnim["대기 화면 표시<br>(내 앞 대기자 N명)"]
     WaitAnim -->|1초 대기| PollStatus
-    CheckStatus -- "EXPIRED (만료됨)" --> ExpiredError["🚨 401 만료 에러<br>(처음부터 다시 줄서기)"] --> EndFail([예매 실패])
+    CheckStatus -- "EXPIRED (만료됨)" --> ExpiredError["🚨 401 만료 에러<br>(처음부터 다시 줄서기)"] --> EndFail([주문 실패])
     CheckStatus -- "ACTIVE (입장 허가)" --> ShowProduct["상품 상세 & 결제 화면 진입<br>(유효시간 5분 타이머 가동)"]
 
     ShowProduct --> OrderBtn["선착순 구매하기 버튼 클릭<br>POST /api/v1/orders"]
@@ -256,7 +256,7 @@ flowchart TD
     BurnToken --> Resp202["🎉 202 ACCEPTED 즉시 응답<br>(주문 접수 완료)"]
     
     Resp202 --> AsyncFulfill["백그라운드 Kafka Consumer<br>MySQL DB 영속화 (PAID 체결)"]
-    AsyncFulfill --> EndSuccess([최종 예매 성공 🏆])
+    AsyncFulfill --> EndSuccess([최종 주문 성공 🏆])
 ```
 
 ---

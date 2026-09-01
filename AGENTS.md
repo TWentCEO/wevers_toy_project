@@ -1,6 +1,6 @@
 # AGENTS.md - Project Constitution & Architecture Guidelines
 
-위버스컴퍼니 수준의 대규모 트래픽(초당 1,000건 이상)을 처리하는 **한정판 굿즈 선착순 예매 시스템**을 위한 아키텍처 원칙 및 협업 헌법입니다.
+위버스컴퍼니 수준의 대규모 트래픽(초당 1,000건 이상)을 처리하는 **한정판 굿즈 선착순 구매(Flash Sale) 시스템**을 위한 아키텍처 원칙 및 협업 헌법입니다.
 모든 서브 에이전트(@Engineer, @SRE, @TechWriter, @PerformanceArchitect 등)와 메인 오케스트레이터(@Mentor)는 아래 규정을 엄수해야 합니다.
 
 작업을 실행할 때, 멀티 에이전트들이 할당된 Task를 잘 이행하는지 모니터링하는 출력을 제공 해야합니다.
