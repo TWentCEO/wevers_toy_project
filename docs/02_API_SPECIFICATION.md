@@ -1,4 +1,4 @@
-# 02. 대규모 선착순 예매 시스템 RESTful API 명세서
+# 02. 대규모 선착순 구매 시스템 RESTful API 명세서
 
 > **원칙 준수 (AGENTS.md):**
 > 1. API-First Design 원칙을 엄수하며 모든 Request/Response는 전용 DTO 스펙을 정의한다.
@@ -11,7 +11,7 @@
 
 ### 1.1. 대기열 진입 및 토큰 발급
 - **Endpoint:** `POST /api/v1/queue/enter`
-- **Description:** 특정 상품 선착순 예매를 위한 대기열에 진입하고 고유 대기열 토큰을 발급받습니다.
+- **Description:** 특정 상품 선착순 구매를 위한 대기열에 진입하고 고유 대기열 토큰을 발급받습니다.
 - **Request Headers:**
   - `Content-Type: application/json`
 - **Request Body:**

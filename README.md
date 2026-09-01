@@ -1,6 +1,6 @@
-# 🎟️ Weverse Toy Project: 대규모 선착순 한정판 예매 시스템
+# 🛍️ Weverse Toy Project: 대규모 선착순 한정판 구매 시스템
 
-> **위버스컴퍼니/글로벌 티켓팅 수준의 대규모 스파이크 트래픽(초당 10,000건 이상)을 0.001초대 지연 시간으로 무장애 처리하는 고성능 선착순 예매 아키텍처**
+> **위버스샵 수준의 대규모 스파이크 트래픽(초당 10,000건 이상)을 0.001초대 지연 시간으로 무장애 처리하는 고성능 한정판 굿즈 선착순 구매(Flash Sale) 아키텍처**
 
 [![Java 17](https://img.shields.io/badge/Java-17-orange.svg)](https://openjdk.org/)
 [![Spring Boot 3.3.3](https://img.shields.io/badge/Spring%20Boot-3.3.3-brightgreen.svg)](https://spring.io/projects/spring-boot)
@@ -23,7 +23,6 @@
 - 📊 [04. ISO 25010 성능 평가 체계 & SLO (04_PERFORMANCE_METRICS_AND_SLO.md)](docs/04_PERFORMANCE_METRICS_AND_SLO.md)
 - 🗺️ [05. 4단계 점진적 개발 로드맵 (05_DEVELOPMENT_STRATEGY_AND_ROADMAP.md)](docs/05_DEVELOPMENT_STRATEGY_AND_ROADMAP.md)
 - 📈 [06. 실시간 성능 벤치마크 및 Grafana 시각화 보고서 (06_PERFORMANCE_BENCHMARK_AND_VISUALIZATION.md)](docs/06_PERFORMANCE_BENCHMARK_AND_VISUALIZATION.md)
-- 📝 [기술 블로그: 1단계 vs 2단계 예매 아키텍처 비교 (BLOG_1Phase_vs_2Phase_Ticketing_Architecture.md)](docs/BLOG_1Phase_vs_2Phase_Ticketing_Architecture.md)
 
 ---
 
@@ -42,7 +41,7 @@ graph LR
 ```
 
 ### 💡 3대 핵심 엔지니어링 원칙
-1. **Gatekeeping (Redis ZSET 대기열):** 스파이크 트래픽이 WAS와 DB를 직접 강타하지 못하도록 Redis Sorted Set에서 초당 100명씩 통제 입장(Throttling).
+1. **Gatekeeping (Redis ZSET 대기열):** 한정판 굿즈 오픈 정각에 스파이크 트래픽이 WAS와 DB를 직접 강타하지 못하도록 Redis Sorted Set에서 초당 100명씩 통제 입장(Throttling).
 2. **Lock-Free Atomic Decrement (원자적 재고 선점):** DB 비관적 락으로 인한 커넥션 고갈을 원천 차단하기 위해 Redis In-Memory `DECRBY`로 0.001초 만에 재고를 선점하고 품절 즉시 차단 (Zero Overselling).
 3. **Event-Driven Asynchronous Pipeline (Kafka 비동기 체결):** 주문 접수 시 DB 저장을 동기식으로 기다리지 않고, Kafka에 메시지를 발행한 뒤 클라이언트에게 즉시 `202 ACCEPTED` 반환.
 

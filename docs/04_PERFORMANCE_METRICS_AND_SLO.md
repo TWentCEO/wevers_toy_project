@@ -1,7 +1,7 @@
 # 04. 대규모 트래픽 성능 평가 체계, SLO, I/O 지표 및 도메인 표준 분석서
 
 > **작성 주체:** `@PerformanceArchitect` (Principal Performance Architect & SRE Specialist)  
-> **적용 대상:** 위버스컴퍼니 수준 대규모 선착순 예매 시스템 (피크 1,000 ~ 10,000 TPS)
+> **적용 대상:** 위버스컴퍼니 수준 대규모 선착순 구매 시스템 (피크 1,000 ~ 10,000 TPS)
 
 ---
 
@@ -76,11 +76,11 @@ graph LR
 
 ---
 
-## 4. 도메인(선착순 티켓팅/이커머스) 통용 기준 비교표
+## 4. 도메인(선착순 한정판 선착순 구매/이커머스) 통용 기준 비교표
 
-글로벌 선착순 이커머스/티켓팅 시스템(Weverse, Interpark, Ticketmaster, Lotte ON)의 엔지니어링 표준 기준입니다.
+글로벌 선착순 이커머스/한정판 선착순 구매 시스템(Weverse, Interpark, Ticketmaster, Lotte ON)의 엔지니어링 표준 기준입니다.
 
-| 평가 항목 | 일반 웹 서비스 | 대규모 선착순 예매 시스템 (Weverse 기준) | 우리 시스템 설계 반영 상태 |
+| 평가 항목 | 일반 웹 서비스 | 대규모 선착순 구매 시스템 (Weverse 기준) | 우리 시스템 설계 반영 상태 |
 | :--- | :--- | :--- | :--- |
 | **트래픽 인입 패턴** | 평탄한 곡선형 트래픽 | **오픈 0.1초 만에 100배 스파이크 (Flash Crowd)** | ✅ Redis ZSET 대기열로 버퍼링 |
 | **동시성 처리 방식** | DB 트랜잭션 락 (`FOR UPDATE`) | **Redis 원자적 카운터 + 비동기 큐 (EDA)** | ✅ Kafka Producer / Redis DECR 분리 |
