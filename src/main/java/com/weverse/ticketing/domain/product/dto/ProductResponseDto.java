@@ -1,37 +1,33 @@
 package com.weverse.ticketing.domain.product.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.weverse.ticketing.domain.product.entity.Product;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ProductResponseDto {
 
-    private final Long id;
-    private final String name;
-    private final String description;
-    private final BigDecimal price;
-    private final Integer availableStock;
-    private final Product.ProductStatus status;
-    private final LocalDateTime salesStartAt;
-    private final LocalDateTime salesEndAt;
+    private Long id;
+    private String name;
+    private String description;
+    private BigDecimal price;
+    private Integer availableStock;
+    private Product.ProductStatus status;
 
-    @Builder
-    public ProductResponseDto(Long id, String name, String description, BigDecimal price,
-                              Integer availableStock, Product.ProductStatus status,
-                              LocalDateTime salesStartAt, LocalDateTime salesEndAt) {
-        this.id = id;
-        this.name = name;
-        this.description = description;
-        this.price = price;
-        this.availableStock = availableStock;
-        this.status = status;
-        this.salesStartAt = salesStartAt;
-        this.salesEndAt = salesEndAt;
-    }
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime salesStartAt;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime salesEndAt;
 
     public static ProductResponseDto fromEntity(Product product) {
         return ProductResponseDto.builder()
